@@ -5,11 +5,11 @@ import (
 )
 
 type Graph struct {
-	Vertices []*Vertex
+	Vertices map[string]*Vertex
 }
 
 type Vertex struct {
-	cell      int //*react.Cell
+	cell      interface{}
 	adjacents []*Vertex
 	visited   bool
 }
@@ -18,16 +18,16 @@ func (g *Graph) CreateVertex(cell int) *Vertex {
 	return &Vertex{cell: cell, visited: false}
 }
 
-func (g *Graph) AddToGraph(v *Vertex) {
-	g.Vertices = append(g.Vertices, v)
+func (g *Graph) AddToGraph(v *Vertex, id string) {
+	g.Vertices[id] = v
 }
 
 func (v *Vertex) CreateEdge(u *Vertex) {
 	v.adjacents = append(v.adjacents, u)
 }
 
-func (g *Graph) UpdateGraphDependenies() {
-	topologicalSort(g, &stack.Stack{})
+func (g *Graph) GetGraphDependenies() []*Vertex {
+	return topologicalSort(g, &stack.Stack{})
 }
 
 func topologicalSort(g *Graph, s *stack.Stack) []*Vertex {
@@ -65,6 +65,6 @@ func visit(v *Vertex, s *stack.Stack, sortedGraph *[]*Vertex) {
 	}
 
 	top = s.Top()
-	*sortedGraph = append(*sortedGraph, s.Pop(&top))
+	*sortedGraph = append(*sortedGraph, (s.Pop(&top)).(*Vertex))
 	return
 }

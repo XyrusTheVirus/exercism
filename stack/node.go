@@ -1,10 +1,6 @@
 package stack
 
-import (
-	"react/graph"
-)
-
 type Node struct {
-	vertex *graph.Vertex
-	next   *Node
+	val  interface{}
+	next *Node
 }

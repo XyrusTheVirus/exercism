@@ -2,7 +2,6 @@ package stack
 
 import (
 	"fmt"
-	"react/graph"
 )
 
 type Stack struct {
@@ -10,10 +9,10 @@ type Stack struct {
 	numOfElements int
 }
 
-func (s *Stack) Push(head **Node, v *graph.Vertex) {
+func (s *Stack) Push(head **Node, v interface{}) {
 	node := &Node{
-		vertex: v,
-		next:   nil,
+		val:  v,
+		next: nil,
 	}
 
 	if *head == nil {
@@ -24,11 +23,12 @@ func (s *Stack) Push(head **Node, v *graph.Vertex) {
 		*head = node
 		s.top = *head
 	}
+
 	s.numOfElements++
 	return
 }
 
-func (s *Stack) Pop(head **Node) *Vertex {
+func (s *Stack) Pop(head **Node) interface{} {
 
 	if *head == nil {
 		return nil
@@ -36,7 +36,7 @@ func (s *Stack) Pop(head **Node) *Vertex {
 
 	temp := *head
 	*head = temp.next
-	v := temp.vertex
+	v := temp.val
 	s.top = temp
 	temp.next = nil
 	temp = nil
@@ -54,10 +54,8 @@ func (s *Stack) NunOfElements() int {
 
 func (s *Stack) Print(head *Node) {
 	temp := head
-
-	fmt.Println(temp)
 	for temp != nil {
-		fmt.Println(temp.vertex.Cell)
+		fmt.Println(temp.val)
 		temp = temp.next
 	}
 }
