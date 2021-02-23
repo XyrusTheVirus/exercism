@@ -1,7 +1,6 @@
 package graph
 
 import (
-	"fmt"
 	"react/stack"
 )
 
@@ -53,22 +52,22 @@ func reverse(v []*Vertex) []*Vertex {
 
 func DFS(g *Graph, s *stack.Stack) []*Vertex {
 	var sortedGraph []*Vertex
-	fmt.Println(g.Vertices)
+
 	for _, v := range g.Vertices {
 		if v.visited == false {
 			visit(v, s, &sortedGraph)
 		}
 	}
 
+	g.restoreVisitedVerteces()
 	return sortedGraph
 }
 
 func visit(v *Vertex, s *stack.Stack, sortedGraph *[]*Vertex) {
 	v.visited = true
 	top := s.Top()
-	fmt.Println("Current Strack: ")
 	s.Push(&top, v)
-	s.Print(top)
+
 	for _, adjacent := range v.adjacents {
 		if adjacent.visited == false {
 			visit(adjacent, s, sortedGraph)
@@ -78,4 +77,10 @@ func visit(v *Vertex, s *stack.Stack, sortedGraph *[]*Vertex) {
 	top = s.Top()
 	*sortedGraph = append(*sortedGraph, (s.Pop(&top)).(*Vertex))
 	return
+}
+
+func (g *Graph) restoreVisitedVerteces() {
+	for _, v := range g.Vertices {
+		v.visited = false
+	}
 }

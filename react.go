@@ -23,9 +23,11 @@ type ICell struct {
 
 type CCell struct {
 	GCell
-	callback func(int)
-	compute1 func(int) int
-	compute2 func(int, int) int
+	numOfIndepandants int
+	inputs            []Cell
+	callback          func(int)
+	compute1          func(int) int
+	compute2          func(int, int) int
 }
 
 func (c *GCell) GetId() string {
@@ -41,11 +43,11 @@ func (c *GCell) SetValue(value int) {
 	sortedGraph := g.GetGraphDependenies()
 	for _, v := range sortedGraph {
 		if reflect.TypeOf(v.GetCell()).String() == "*react.CCell" {
-			switch n := len(v.GetAdjacents()); n {
+			switch len(v.GetCell().(*CCell).inputs) {
 			case 1:
-				v.GetCell().(*GCell).value = v.GetCell().(CCell).compute1(v.GetAdjacents()[0].GetCell().(*GCell).Value())
+				v.GetCell().(*CCell).value = v.GetCell().(*CCell).compute1(getValueByType(v.GetCell().(*CCell).inputs[0]))
 			case 2:
-				v.GetCell().(*GCell).value = v.GetCell().(CCell).compute2(v.GetAdjacents()[0].GetCell().(*GCell).Value(), v.GetAdjacents()[1].GetCell().(*GCell).Value())
+				v.GetCell().(*CCell).value = v.GetCell().(*CCell).compute2(getValueByType(v.GetCell().(*CCell).inputs[0]), getValueByType(v.GetCell().(*CCell).inputs[1]))
 			}
 		}
 	}
@@ -62,30 +64,44 @@ func (c CCell) Cancel() {
 
 func (r React) CreateInput(value int) InputCell {
 	cell := &ICell{GCell: GCell{id: r.GenerateUniqueId(), value: value}}
-	g.AddToGraph(g.CreateVertex(value), cell.GetId())
+	g.AddToGraph(g.CreateVertex(cell), cell.GetId())
 	return cell
 }
 
 func (r React) CreateCompute1(c1 Cell, compute func(value int) int) ComputeCell {
-	cell := &CCell{GCell: GCell{id: r.GenerateUniqueId(), value: compute(c1.Value())}, callback: func(value int) { fmt.Println(value) }, compute1: compute}
-	vertex := g.CreateVertex(cell.Value())
+	cell := &CCell{GCell: GCell{id: r.GenerateUniqueId(), value: compute(c1.Value())}, callback: func(value int) { fmt.Println(value) }, compute1: compute, numOfIndepandants: 1}
+	cell.inputs = append(cell.inputs, c1)
+	vertex := g.CreateVertex(cell)
 	g.AddToGraph(vertex, cell.GetId())
 	g.Vertices[getIdByType(c1)].CreateEdge(vertex)
 	return cell
 }
 
 func (r React) CreateCompute2(c1 Cell, c2 Cell, compute func(value1, value2 int) int) ComputeCell {
-	cell := &CCell{GCell: GCell{value: compute(c1.Value(), c2.Value())}, callback: func(value int) { fmt.Println(value) }, compute2: compute}
-	vertex := g.CreateVertex(cell.Value())
+	cell := &CCell{GCell: GCell{id: r.GenerateUniqueId(), value: compute(c1.Value(), c2.Value())}, callback: func(value int) { fmt.Println(value) }, compute2: compute, numOfIndepandants: 2}
+	cell.inputs = append(cell.inputs, c1, c2)
+	vertex := g.CreateVertex(cell)
 	g.AddToGraph(vertex, cell.GetId())
 	g.Vertices[getIdByType(c1)].CreateEdge(vertex)
 	g.Vertices[getIdByType(c2)].CreateEdge(vertex)
 	return cell
 }
 
+func getValueByType(c interface{}) int {
+	var value int
+
+	switch c.(type) {
+	case *CCell:
+		value = c.(*CCell).Value()
+	case *ICell:
+		value = c.(*ICell).Value()
+	}
+
+	return value
+}
+
 func getIdByType(c Cell) string {
 	id := ""
-	fmt.Println(reflect.TypeOf(c))
 	switch c.(type) {
 	case *CCell:
 		id = c.(*CCell).GetId()

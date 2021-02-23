@@ -37,8 +37,7 @@ func (s *Stack) Pop(head **Node) interface{} {
 	temp := *head
 	*head = temp.next
 	v := temp.val
-	s.top = temp
-	temp.next = nil
+	s.top = *head
 	temp = nil
 	s.numOfElements--
 	return v
