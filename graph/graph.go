@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"fmt"
 	"react/stack"
 )
 
@@ -14,7 +15,15 @@ type Vertex struct {
 	visited   bool
 }
 
-func (g *Graph) CreateVertex(cell int) *Vertex {
+func (v *Vertex) GetCell() interface{} {
+	return v.cell
+}
+
+func (v *Vertex) GetAdjacents() []*Vertex {
+	return v.adjacents
+}
+
+func (g *Graph) CreateVertex(cell interface{}) *Vertex {
 	return &Vertex{cell: cell, visited: false}
 }
 
@@ -44,6 +53,7 @@ func reverse(v []*Vertex) []*Vertex {
 
 func DFS(g *Graph, s *stack.Stack) []*Vertex {
 	var sortedGraph []*Vertex
+	fmt.Println(g.Vertices)
 	for _, v := range g.Vertices {
 		if v.visited == false {
 			visit(v, s, &sortedGraph)
@@ -56,8 +66,9 @@ func DFS(g *Graph, s *stack.Stack) []*Vertex {
 func visit(v *Vertex, s *stack.Stack, sortedGraph *[]*Vertex) {
 	v.visited = true
 	top := s.Top()
+	fmt.Println("Current Strack: ")
 	s.Push(&top, v)
-
+	s.Print(top)
 	for _, adjacent := range v.adjacents {
 		if adjacent.visited == false {
 			visit(adjacent, s, sortedGraph)
