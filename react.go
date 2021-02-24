@@ -28,6 +28,10 @@ type CCell struct {
 	compute2  func(int, int) int
 }
 
+type CCancel struct {
+	callback func(int)
+}
+
 func (c *GCell) GetId() string {
 	return c.id
 }
@@ -62,23 +66,25 @@ func propagate() {
 
 func (c *CCell) AddCallback(callback func(value int)) Canceler {
 	c.callbacks = append(c.callbacks, callback)
-	return c
+	return &CCancel{callback: callback}
 }
 
 func executeCallback(c interface{}, currentVal int) {
 	if shouldExecuteCallback(c, currentVal) == true {
 		for _, callback := range c.(*CCell).callbacks {
-			callback(c.(*CCell).Value())
+			if callback != nil {
+				callback(c.(*CCell).Value())
+			}
 		}
 	}
 }
 
 func shouldExecuteCallback(c interface{}, currentVal int) bool {
-	return len(c.(*CCell).callbacks) > 0 && currentVal != c.(*CCell).Value()
+	return currentVal != c.(*CCell).Value()
 }
 
-func (c CCell) Cancel() {
-	c.callbacks = c.callbacks[1:]
+func (c *CCancel) Cancel() {
+	c.callback = nil
 }
 
 func (r React) CreateInput(value int) InputCell {
