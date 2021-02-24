@@ -1,7 +1,6 @@
 package react
 
 import (
-	"fmt"
 	"react/graph"
 	"reflect"
 
@@ -23,11 +22,10 @@ type ICell struct {
 
 type CCell struct {
 	GCell
-	numOfIndepandants int
-	inputs            []Cell
-	callback          func(int)
-	compute1          func(int) int
-	compute2          func(int, int) int
+	inputs    []Cell
+	callbacks []func(int)
+	compute1  func(int) int
+	compute2  func(int, int) int
 }
 
 func (c *GCell) GetId() string {
@@ -39,27 +37,48 @@ func (r React) GenerateUniqueId() string {
 }
 
 func (c *GCell) SetValue(value int) {
-	c.value = value
+	if c.value != value {
+		c.value = value
+		propagate()
+	}
+}
+
+func propagate() {
 	sortedGraph := g.GetGraphDependenies()
 	for _, v := range sortedGraph {
 		if reflect.TypeOf(v.GetCell()).String() == "*react.CCell" {
+			currentVal := v.GetCell().(*CCell).Value()
 			switch len(v.GetCell().(*CCell).inputs) {
 			case 1:
 				v.GetCell().(*CCell).value = v.GetCell().(*CCell).compute1(getValueByType(v.GetCell().(*CCell).inputs[0]))
+				executeCallback(v.GetCell(), currentVal)
 			case 2:
 				v.GetCell().(*CCell).value = v.GetCell().(*CCell).compute2(getValueByType(v.GetCell().(*CCell).inputs[0]), getValueByType(v.GetCell().(*CCell).inputs[1]))
+				executeCallback(v.GetCell(), currentVal)
 			}
 		}
 	}
 }
 
-func (c CCell) AddCallback(callback func(value int)) Canceler {
-	c.callback = callback
+func (c *CCell) AddCallback(callback func(value int)) Canceler {
+	c.callbacks = append(c.callbacks, callback)
 	return c
 }
 
+func executeCallback(c interface{}, currentVal int) {
+	if shouldExecuteCallback(c, currentVal) == true {
+		for _, callback := range c.(*CCell).callbacks {
+			callback(c.(*CCell).Value())
+		}
+	}
+}
+
+func shouldExecuteCallback(c interface{}, currentVal int) bool {
+	return len(c.(*CCell).callbacks) > 0 && currentVal != c.(*CCell).Value()
+}
+
 func (c CCell) Cancel() {
-	c.callback = nil
+	c.callbacks = c.callbacks[1:]
 }
 
 func (r React) CreateInput(value int) InputCell {
@@ -69,7 +88,7 @@ func (r React) CreateInput(value int) InputCell {
 }
 
 func (r React) CreateCompute1(c1 Cell, compute func(value int) int) ComputeCell {
-	cell := &CCell{GCell: GCell{id: r.GenerateUniqueId(), value: compute(c1.Value())}, callback: func(value int) { fmt.Println(value) }, compute1: compute, numOfIndepandants: 1}
+	cell := &CCell{GCell: GCell{id: r.GenerateUniqueId(), value: compute(c1.Value())}, compute1: compute}
 	cell.inputs = append(cell.inputs, c1)
 	vertex := g.CreateVertex(cell)
 	g.AddToGraph(vertex, cell.GetId())
@@ -78,7 +97,7 @@ func (r React) CreateCompute1(c1 Cell, compute func(value int) int) ComputeCell 
 }
 
 func (r React) CreateCompute2(c1 Cell, c2 Cell, compute func(value1, value2 int) int) ComputeCell {
-	cell := &CCell{GCell: GCell{id: r.GenerateUniqueId(), value: compute(c1.Value(), c2.Value())}, callback: func(value int) { fmt.Println(value) }, compute2: compute, numOfIndepandants: 2}
+	cell := &CCell{GCell: GCell{id: r.GenerateUniqueId(), value: compute(c1.Value(), c2.Value())}, compute2: compute}
 	cell.inputs = append(cell.inputs, c1, c2)
 	vertex := g.CreateVertex(cell)
 	g.AddToGraph(vertex, cell.GetId())

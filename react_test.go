@@ -1,6 +1,7 @@
 package react
 
 import (
+	"fmt"
 	"runtime"
 	"testing"
 )
@@ -156,6 +157,7 @@ func TestCallbackAddRemove(t *testing.T) {
 	c := r.CreateCompute1(i, func(v int) int { return v + 1 })
 	var observed1 []int
 	cb1 := c.AddCallback(func(v int) {
+		fmt.Println("Inside callback: ")
 		observed1 = append(observed1, v)
 	})
 	var observed2 []int
