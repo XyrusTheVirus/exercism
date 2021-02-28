@@ -29,7 +29,7 @@ type CCell struct {
 }
 
 type CCancel struct {
-	callback func(int)
+	callback *func(int)
 }
 
 func (c *GCell) GetId() string {
@@ -66,14 +66,15 @@ func propagate() {
 
 func (c *CCell) AddCallback(callback func(value int)) Canceler {
 	c.callbacks = append(c.callbacks, callback)
-	return &CCancel{callback: callback}
+	return &CCancel{callback: &c.callbacks[len(c.callbacks)-1]}
 }
 
 func executeCallback(c interface{}, currentVal int) {
 	if shouldExecuteCallback(c, currentVal) == true {
-		for _, callback := range c.(*CCell).callbacks {
-			if callback != nil {
-				callback(c.(*CCell).Value())
+		callbacks := c.(*CCell).callbacks
+		for i := 0; i < len(callbacks); i++ {
+			if callbacks[i] != nil {
+				callbacks[i](c.(*CCell).Value())
 			}
 		}
 	}
@@ -84,7 +85,7 @@ func shouldExecuteCallback(c interface{}, currentVal int) bool {
 }
 
 func (c *CCancel) Cancel() {
-	c.callback = nil
+	*c.callback = nil
 }
 
 func (r React) CreateInput(value int) InputCell {
@@ -94,7 +95,7 @@ func (r React) CreateInput(value int) InputCell {
 }
 
 func (r React) CreateCompute1(c1 Cell, compute func(value int) int) ComputeCell {
-	cell := &CCell{GCell: GCell{id: r.GenerateUniqueId(), value: compute(c1.Value())}, compute1: compute}
+	cell := &CCell{GCell: GCell{id: r.GenerateUniqueId(), value: compute(c1.Value())}, compute1: compute, callbacks: make([]func(int), 0)}
 	cell.inputs = append(cell.inputs, c1)
 	vertex := g.CreateVertex(cell)
 	g.AddToGraph(vertex, cell.GetId())
