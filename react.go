@@ -1,6 +1,7 @@
 package react
 
 import (
+	"fmt"
 	"react/graph"
 	"reflect"
 
@@ -8,6 +9,8 @@ import (
 )
 
 var g *graph.Graph = &graph.Graph{Vertices: make(map[string]*graph.Vertex)}
+var callbacksCounter int = 0
+var tempCallback []func(int)
 
 type React struct{}
 
@@ -65,7 +68,9 @@ func propagate() {
 }
 
 func (c *CCell) AddCallback(callback func(value int)) Canceler {
-	c.callbacks = append(c.callbacks, callback)
+	tempCallback = append(tempCallback, callback)
+	copy(c.callbacks, tempCallback)
+	// fmt.Println("here: ", x)
 	return &CCancel{callback: &c.callbacks[len(c.callbacks)-1]}
 }
 
@@ -73,6 +78,7 @@ func executeCallback(c interface{}, currentVal int) {
 	if shouldExecuteCallback(c, currentVal) == true {
 		callbacks := c.(*CCell).callbacks
 		for i := 0; i < len(callbacks); i++ {
+			fmt.Println("hi1", &callbacks[i])
 			if callbacks[i] != nil {
 				callbacks[i](c.(*CCell).Value())
 			}
@@ -85,7 +91,13 @@ func shouldExecuteCallback(c interface{}, currentVal int) bool {
 }
 
 func (c *CCancel) Cancel() {
+
+	// v := reflect.ValueOf(*c.callback)
+	// p := v.Elem()
+	// p.Set(reflect.Zero(p.Type()))
+	fmt.Println("hi2", c.callback)
 	*c.callback = nil
+	fmt.Println("hi3", c.callback)
 }
 
 func (r React) CreateInput(value int) InputCell {
@@ -95,7 +107,7 @@ func (r React) CreateInput(value int) InputCell {
 }
 
 func (r React) CreateCompute1(c1 Cell, compute func(value int) int) ComputeCell {
-	cell := &CCell{GCell: GCell{id: r.GenerateUniqueId(), value: compute(c1.Value())}, compute1: compute, callbacks: make([]func(int), 0)}
+	cell := &CCell{GCell: GCell{id: r.GenerateUniqueId(), value: compute(c1.Value())}, compute1: compute}
 	cell.inputs = append(cell.inputs, c1)
 	vertex := g.CreateVertex(cell)
 	g.AddToGraph(vertex, cell.GetId())
