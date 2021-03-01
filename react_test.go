@@ -1,7 +1,6 @@
 package react
 
 import (
-	"fmt"
 	"runtime"
 	"testing"
 )
@@ -170,7 +169,6 @@ func TestCallbackAddRemove(t *testing.T) {
 	if len(observed2) != 1 || observed2[0] != 3 {
 		t.Fatalf("observed2 not properly called")
 	}
-	fmt.Println(("About to cancel callback"))
 	cb1.Cancel()
 	i.SetValue(3)
 	if len(observed1) != 1 {

@@ -1,7 +1,6 @@
 package react
 
 import (
-	"fmt"
 	"react/graph"
 	"reflect"
 
@@ -26,13 +25,17 @@ type ICell struct {
 type CCell struct {
 	GCell
 	inputs    []Cell
-	callbacks []func(int)
+	callbacks []*Callback
 	compute1  func(int) int
 	compute2  func(int, int) int
 }
 
 type CCancel struct {
-	callback *func(int)
+	callback *Callback
+}
+
+type Callback struct {
+	f func(int)
 }
 
 func (c *GCell) GetId() string {
@@ -68,19 +71,17 @@ func propagate() {
 }
 
 func (c *CCell) AddCallback(callback func(value int)) Canceler {
-	tempCallback = append(tempCallback, callback)
-	copy(c.callbacks, tempCallback)
-	// fmt.Println("here: ", x)
-	return &CCancel{callback: &c.callbacks[len(c.callbacks)-1]}
+	function := &Callback{f: callback}
+	c.callbacks = append(c.callbacks, function)
+	return &CCancel{callback: function}
 }
 
 func executeCallback(c interface{}, currentVal int) {
 	if shouldExecuteCallback(c, currentVal) == true {
 		callbacks := c.(*CCell).callbacks
-		for i := 0; i < len(callbacks); i++ {
-			fmt.Println("hi1", &callbacks[i])
-			if callbacks[i] != nil {
-				callbacks[i](c.(*CCell).Value())
+		for _, callback := range callbacks {
+			if callback.f != nil {
+				callback.f(c.(*CCell).Value())
 			}
 		}
 	}
@@ -91,13 +92,7 @@ func shouldExecuteCallback(c interface{}, currentVal int) bool {
 }
 
 func (c *CCancel) Cancel() {
-
-	// v := reflect.ValueOf(*c.callback)
-	// p := v.Elem()
-	// p.Set(reflect.Zero(p.Type()))
-	fmt.Println("hi2", c.callback)
-	*c.callback = nil
-	fmt.Println("hi3", c.callback)
+	c.callback.f = nil
 }
 
 func (r React) CreateInput(value int) InputCell {
