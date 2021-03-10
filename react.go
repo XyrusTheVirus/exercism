@@ -72,19 +72,19 @@ func propagate() {
 	for _, v := range sortedGraph {
 		// Input cells shouldn't be updated at all, only via 'SetValue' function
 		if reflect.TypeOf(v.GetCell()).String() == "*react.CCell" {
-			currentVal := v.GetCell().(*CCell).Value()
+			oldVal := v.GetCell().(*CCell).Value()
 			// Determine to which compute function we should call, according to its list of parameter
 			switch len(v.GetCell().(*CCell).inputs) {
 			case 1:
 				// Update cell value
 				v.GetCell().(*CCell).value = v.GetCell().(*CCell).compute1(getValueByType(v.GetCell().(*CCell).inputs[0]))
 				// Call the callback to notify cell value modification
-				executeCallback(v.GetCell(), currentVal)
+				executeCallback(v.GetCell(), oldVal)
 			case 2:
 				// Update cell value
 				v.GetCell().(*CCell).value = v.GetCell().(*CCell).compute2(getValueByType(v.GetCell().(*CCell).inputs[0]), getValueByType(v.GetCell().(*CCell).inputs[1]))
 				// Call the callback to notify cell value modification
-				executeCallback(v.GetCell(), currentVal)
+				executeCallback(v.GetCell(), oldVal)
 			}
 		}
 	}
@@ -98,8 +98,10 @@ func (c *CCell) AddCallback(callback func(value int)) Canceler {
 }
 
 // Executes callback compute cell callback
-func executeCallback(c interface{}, currentVal int) {
-	if shouldExecuteCallback(c, currentVal) == true {
+// Receives cell stored inside the graph vertex
+// Receives the cell's value before its modification to check if cell's value has changed
+func executeCallback(c interface{}, oldVal int) {
+	if shouldExecuteCallback(c, oldVal) == true {
 		callbacks := c.(*CCell).callbacks
 		for _, callback := range callbacks {
 			if callback.f != nil {
@@ -109,20 +111,31 @@ func executeCallback(c interface{}, currentVal int) {
 	}
 }
 
-func shouldExecuteCallback(c interface{}, currentVal int) bool {
-	return currentVal != c.(*CCell).Value()
+// Verifies any value modification of the cell
+// Receives cell stored inside the graph vertex
+// Receives oldVall to check against cell's current value
+func shouldExecuteCallback(c interface{}, oldVal int) bool {
+	return oldVal != c.(*CCell).Value()
 }
 
+// Abolish cell's occurrence callback
 func (c *CCancel) Cancel() {
 	c.callback.f = nil
 }
 
+// Creates brand new input cell
+// Receives the value assigned to the cell
+// Returns InputCell instance
 func (r React) CreateInput(value int) InputCell {
 	cell := &ICell{GCell: GCell{id: r.GenerateUniqueId(), value: value}}
 	g.AddToGraph(g.CreateVertex(cell), cell.GetId())
 	return cell
 }
 
+// Creates brand new compute cell, depend on 1 cell
+// Receives c1 as independent cell
+// Receives compute as value processing function
+// Returns ComputeCell instance
 func (r React) CreateCompute1(c1 Cell, compute func(value int) int) ComputeCell {
 	cell := &CCell{GCell: GCell{id: r.GenerateUniqueId(), value: compute(c1.Value())}, compute1: compute}
 	cell.inputs = append(cell.inputs, c1)
@@ -132,6 +145,10 @@ func (r React) CreateCompute1(c1 Cell, compute func(value int) int) ComputeCell 
 	return cell
 }
 
+// Creates brand new compute cell, depend on 2 cell
+// Receives c1, c2 as independent cells
+// Receives compute as value processing function
+// Returns ComputeCell instance
 func (r React) CreateCompute2(c1 Cell, c2 Cell, compute func(value1, value2 int) int) ComputeCell {
 	cell := &CCell{GCell: GCell{id: r.GenerateUniqueId(), value: compute(c1.Value(), c2.Value())}, compute2: compute}
 	cell.inputs = append(cell.inputs, c1, c2)
@@ -142,6 +159,9 @@ func (r React) CreateCompute2(c1 Cell, c2 Cell, compute func(value1, value2 int)
 	return cell
 }
 
+// Returns cell's value by determining which type it is (CCell or ICell)
+// Receives c as cell stored inside the graph vertex
+// Returns the integer value
 func getValueByType(c interface{}) int {
 	var value int
 
@@ -155,6 +175,9 @@ func getValueByType(c interface{}) int {
 	return value
 }
 
+// Returns cell's id by determining which type it is (CCell or ICell)
+// Receives c - an occurrence of Cell interface
+// Returns the string id
 func getIdByType(c Cell) string {
 	id := ""
 	switch c.(type) {
@@ -167,10 +190,12 @@ func getIdByType(c Cell) string {
 	return id
 }
 
+// Returns cell's value
 func (c *GCell) Value() int {
 	return c.value
 }
 
+// Returns brand new React instance
 func New() Reactor {
 	return React{}
 }
