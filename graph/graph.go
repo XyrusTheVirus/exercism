@@ -96,5 +96,25 @@ func DFS(g *Graph, s *stack.Stack) []*Vertex {
 // Recieves the current vertexx on the search, that has to be exolored
 // Recieves stack instance to push and pop the vertices respectively
 // Recieves reference of sorted graph to store the topological sort in it
-func visit(v *Vertex, s *stack.S}
+func visit(v *Vertex, s *stack.Stack, sortedGraph *[]*Vertex) {
+	v.visited = true
+	top := s.Top()
+	s.Push(&top, v)
+
+	for _, adjacent := range v.adjacents {
+		if adjacent.visited == false {
+			visit(adjacent, s, sortedGraph)
+		}
+	}
+
+	top = s.Top()
+	*sortedGraph = append(*sortedGraph, (s.Pop(&top)).(*Vertex))
+	return
+}
+
+// Returns an vertex's neighbor
+func (g *Graph) restoreVisitedVerteces() {
+	for _, v := range g.Vertices {
+		v.visited = false
+	}
 }
