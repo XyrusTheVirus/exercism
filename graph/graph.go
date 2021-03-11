@@ -71,7 +71,13 @@ func reverse(v []*Vertex) []*Vertex {
 	return v
 }
 
-//
+// Applies a DFS search on the graph with considderation that the graph can be diddconneted
+// For instanece: c1 is dependent on i1 and c2 is depenedent on i2, so the graph representation will
+// display 2 connectivity components i1 -> c1 and i2 -> c2, therefore we need to iterate through all
+// vertices and then visit each vertex unvisitied adjacents
+// Reccieves graph to travel inside it
+// Recieves stack to apply the DFS search
+// Returns the DFS output as an array of *Vertex
 func DFS(g *Graph, s *stack.Stack) []*Vertex {
 	var sortedGraph []*Vertex
 
@@ -81,28 +87,14 @@ func DFS(g *Graph, s *stack.Stack) []*Vertex {
 		}
 	}
 
+	// Restore all vertices visited properties to false for next propogation operation
 	g.restoreVisitedVerteces()
 	return sortedGraph
 }
 
-func visit(v *Vertex, s *stack.Stack, sortedGraph *[]*Vertex) {
-	v.visited = true
-	top := s.Top()
-	s.Push(&top, v)
-
-	for _, adjacent := range v.adjacents {
-		if adjacent.visited == false {
-			visit(adjacent, s, sortedGraph)
-		}
-	}
-
-	top = s.Top()
-	*sortedGraph = append(*sortedGraph, (s.Pop(&top)).(*Vertex))
-	return
-}
-
-func (g *Graph) restoreVisitedVerteces() {
-	for _, v := range g.Vertices {
-		v.visited = false
-	}
+// Visits in each unvisitied verte's adjaccent
+// Recieves the current vertexx on the search, that has to be exolored
+// Recieves stack instance to push and pop the vertices respectively
+// Recieves reference of sorted graph to store the topological sort in it
+func visit(v *Vertex, s *stack.S}
 }
