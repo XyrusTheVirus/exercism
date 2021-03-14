@@ -82,9 +82,7 @@ func DFS(g *Graph, s *stack.Stack) []*Vertex {
 	var sortedGraph []*Vertex
 
 	for _, v := range g.Vertices {
-		if v.visited == false {
-			visit(v, s, &sortedGraph)
-		}
+		visit(v, s, &sortedGraph)
 	}
 
 	// Restore all vertices visited properties to false for next propogation operation
@@ -97,14 +95,17 @@ func DFS(g *Graph, s *stack.Stack) []*Vertex {
 // Recieves stack instance to push and pop the vertices respectively
 // Recieves reference of sorted graph to store the topological sort in it
 func visit(v *Vertex, s *stack.Stack, sortedGraph *[]*Vertex) {
+
+	if v.visited == true {
+		return
+	}
+
 	v.visited = true
 	top := s.Top()
 	s.Push(&top, v)
 
 	for _, adjacent := range v.adjacents {
-		if adjacent.visited == false {
-			visit(adjacent, s, sortedGraph)
-		}
+		visit(adjacent, s, sortedGraph)
 	}
 
 	top = s.Top()
